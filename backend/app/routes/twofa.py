@@ -6,11 +6,14 @@ from app.models.user import User
 from app.core.audit import log_action
 from pydantic import BaseModel
 import pyotp
+import qrcode
+import io
+import base64
 
 router = APIRouter(prefix="/2fa", tags=["Two-Factor Auth"])
 
 class TOTPVerify(BaseModel):
-    code: str
+    totp_code: str
 
 @router.post("/setup")
 def setup_2fa(
@@ -26,14 +29,17 @@ def setup_2fa(
         issuer_name="SecureCloudDrive"
     )
 
-    # Сохраняем секрет временно (до подтверждения)
+    qr = qrcode.make(uri)
+    buf = io.BytesIO()
+    qr.save(buf, format="PNG")
+    qr_base64 = base64.b64encode(buf.getvalue()).decode()
+
     current_user.totp_secret = secret
     db.commit()
 
     return {
         "secret": secret,
-        "qr_uri": uri,
-        "message": "Scan QR code in Google Authenticator then confirm with /2fa/confirm"
+        "qr_code": qr_base64,
     }
 
 @router.post("/confirm")
@@ -45,7 +51,7 @@ def confirm_2fa(
     if not current_user.totp_secret:
         raise HTTPException(400, "Run /2fa/setup first")
 
-    if not pyotp.TOTP(current_user.totp_secret).verify(data.code):
+    if not pyotp.TOTP(current_user.totp_secret).verify(data.totp_code):
         raise HTTPException(400, "Invalid code")
 
     current_user.is_2fa_enabled = True
@@ -63,7 +69,7 @@ def disable_2fa(
     if not current_user.is_2fa_enabled:
         raise HTTPException(400, "2FA is not enabled")
 
-    if not pyotp.TOTP(current_user.totp_secret).verify(data.code):
+    if not pyotp.TOTP(current_user.totp_secret).verify(data.totp_code):
         raise HTTPException(400, "Invalid code")
 
     current_user.is_2fa_enabled = False

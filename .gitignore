@@ -7,8 +7,5 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
-echo ".vs/" >> .gitignore
-echo "*.slnx" >> .gitignore
-git add .gitignore
-git add .
-git commit -m "feat: complete backend - auth, files, 2FA, audit logs, admin, backup"
+.vs/
+*.slnx
