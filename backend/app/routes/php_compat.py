@@ -1,17 +1,13 @@
+import subprocess
+import os
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
-from datetime import datetime
+from fastapi.responses import JSONResponse
+import json
 
 router = APIRouter()
 
-@router.get("/php-info", response_class=HTMLResponse)
+@router.get("/php-info")
 async def php_info():
-    return """<?php
-$status = [
-    'server' => 'SecureCloudDrive',
-    'php_version' => '8.2.0',
-    'status' => 'OK',
-    'time' => date('Y-m-d H:i:s')
-];
-echo json_encode($status);
-?>"""
+    php_script = os.path.join(os.path.dirname(__file__), "../php/info.php")
+    result = subprocess.run(["php", php_script], capture_output=True, text=True)
+    return JSONResponse(json.loads(result.stdout))
