@@ -37,9 +37,19 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
+    useEffect(() => {
+        fetchFiles();
+        fetchUserStatus();
+    }, []);
+
+    const fetchUserStatus = async () => {
+        try {
+            const res = await axios.get('/api/auth/me', getAuthHeaders());
+            setIs2FAEnabled(res.data.is_2fa_enabled);
+        } catch (err) {
+            console.error('Failed to fetch user status', err);
+        }
+    };
 
   const uploadFile = async (file: File) => {
     const formData = new FormData();
