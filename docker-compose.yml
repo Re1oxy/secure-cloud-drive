@@ -22,6 +22,7 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=60
     volumes:
       - ./backend/storage:/app/storage
+      - ./backend:/app
     depends_on:
       - db
     restart: unless-stopped
